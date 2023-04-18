@@ -1,0 +1,49 @@
+{
+  "name": "@satoshibits/data-segmenter",
+  "version": "1.0.0",
+  "description": "`data-segmenter` is a tool that allows package consumers to define segments from their data regardless of data source like MongoDB or SQL in the backend and provide those segments to a client consumer or user in the frontend.",
+  "main": "./dist/esm/index.mjs",
+  "types": "./dist/esm/types/index.d.ts",
+  "scripts": {
+    "clean": "rm -rf ./dist",
+    "build": "npm run clean && npm run build:esm && npm run build:cjs",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "prepack": "npm run build"
+  },
+  "files": [
+    "./dist/**/*"
+  ],
+  "exports": {
+    "import": {
+      "types": "./dist/esm/types/index.d.ts",
+      "default": "./dist/esm/index.mjs"
+    },
+    "require": {
+      "types": "./dist/cjs/types/index.d.ts",
+      "default": "./dist/cjs/index.js"
+    }
+  },
+  "keywords": [
+    "segment",
+    "segmenter",
+    "data segmenter",
+    "segment composer",
+    "segment builder"
+  ],
+  "author": "Abe Caymo (https://abecaymo.netlify.app/)",
+  "license": "MIT",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.40.0",
+    "@typescript-eslint/parser": "^5.40.0",
+    "eslint": "^8.28.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-import-resolver-typescript": "^3.5.2",
+    "eslint-plugin-import": "^2.26.0",
+    "tsx": "^3.12.6",
+    "typescript": "^4.9.3"
+  },
+  "directories": {
+    "example": "examples"
+  }
+}
