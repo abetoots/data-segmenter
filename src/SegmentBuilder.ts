@@ -16,11 +16,11 @@ export type SegmentDefinition<QueryType, SegmentData> = {
    * would need this when trying to build out a UI
    * for composing segments.
    */
-  getSegmentOptions: () => SegmentOption[];
+  getSegmentOptions: () => SegmentOption[] | Promise<SegmentOption[]>;
   /**
    * Get the segmented data when the query is run against the data source.
    */
-  getSegmentData?: (query: QueryType) => SegmentData;
+  getSegmentData?: (query: QueryType) => SegmentData | Promise<SegmentData>;
 };
 
 export class SegmentBuilder<TQueryType, TSegmentData> {

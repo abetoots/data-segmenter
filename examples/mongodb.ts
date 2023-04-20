@@ -26,10 +26,14 @@ const segmentDefinitions: SegmentDefinition<MongoDBQuery, SegmentedData[]>[] = [
     buildQuery: (value) => {
       return { originalSource: value };
     },
-    getSegmentOptions() {
+    getSegmentOptions: async () => {
       // you should run a query here
       // to get all possible values of originalSource from your data
-      return [];
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          resolve([{ value: 'google', count: 100 }]);
+        }, 5000);
+      });
     },
   },
   {
@@ -48,22 +52,13 @@ const segmentDefinitions: SegmentDefinition<MongoDBQuery, SegmentedData[]>[] = [
 ];
 
 // Create instance of segment builder
-export const segmentBuilder = new SegmentBuilder(segmentDefinitions, {
-  /**
-   * Define a method to run the segment against the data source.
-   * A segment definition can override this method.
-   */
-  executeSegment: (query) => {
-    // you would then run something like db.profiles.find(query) or db.profiles.aggregate(query)
-    return [{ email: 'sample@test.com', firstname: 'John', meta: 120 }];
-  },
-});
+export const segmentBuilder = new SegmentBuilder(segmentDefinitions);
 
 // Use segment builder to get a segment
 const { name, query } = segmentBuilder.getSegment('originalSource', { value: 'Google' });
 
 // Run and get the data
-segmentBuilder.executeSegment(name, query);
+//db.profiles.findMany(query)
 
 //STEP 2: Compose segments in the client.
 
