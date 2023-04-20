@@ -1,6 +1,6 @@
 {
   "name": "@satoshibits/data-segmenter",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "`data-segmenter` is a tool that allows package consumers to define segments from their data regardless of data source like MongoDB or SQL in the backend and provide those segments to a client consumer or user in the frontend.",
   "main": "./dist/esm/index.mjs",
   "types": "./dist/esm/types/index.d.ts",
@@ -9,7 +9,9 @@
     "build": "npm run clean && npm run build:esm && npm run build:cjs",
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:cjs": "tsc -p tsconfig.cjs.json",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "prepare": "husky install",
+    "typecheck": "npx tsc -p tsconfig.esm.json --noEmit"
   },
   "files": [
     "./dist/**/*"
@@ -40,8 +42,9 @@
     "eslint-config-prettier": "^8.5.0",
     "eslint-import-resolver-typescript": "^3.5.2",
     "eslint-plugin-import": "^2.26.0",
+    "husky": "^8.0.0",
     "tsx": "^3.12.6",
-    "typescript": "^4.9.3"
+    "typescript": "^5.0.4"
   },
   "directories": {
     "example": "examples"
