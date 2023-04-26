@@ -1,103 +1,101 @@
 import { parse, QueryComposer } from '../src/QueryComposer.js';
 import { createComposer } from '../src/SegmentComposer.js';
-import { SegmentBuilder } from '../src/SegmentBuilder.js';
-import type { TimePeriodOperator } from '../src/SegmentComposer.js';
-import type { SegmentDefinition } from '../src/SegmentBuilder.js';
+import { createSegmentDefinitions, GetOptionsFn, getSegment } from '../src/SegmentBuilder.js';
 
-//STEP 1: Define your segments.
-
-//this query type;
 type MongoDBQuery = {
   [key: string]: any;
 };
-
-//What a segment should return when it's query is run
-//against the data source.
-type SegmentedData = {
-  email: string;
-  firstname: string;
-  meta: any;
-};
-
-const segmentDefinitions: SegmentDefinition<MongoDBQuery, SegmentedData[]>[] = [
+//STEP 1: Define your segments.
+export const growthSegmentDefinitions = createSegmentDefinitions([
   {
     name: 'originalSource',
     description: 'Segment by originalSource of profiles.',
     buildQuery: (value) => {
-      return { originalSource: value };
-    },
-    getSegmentOptions: async () => {
-      // you should run a query here
-      // to get all possible values of originalSource from your data
-      return new Promise((resolve, reject) => {
-        setTimeout(() => {
-          resolve([{ value: 'google', count: 100 }]);
-        }, 5000);
-      });
+      return { originalSource: value as string } as const;
     },
   },
   {
-    name: 'withTransactions',
-    description: 'Get all profiles that had transactions.',
-    buildQuery: (params) => {
+    name: 'customerOrProspect',
+    description: 'Get all profiles based on whether they had transactions or not',
+    buildQuery: (value) => {
+      if (value === 'customer') {
+        return {
+          totalTransactions: { $gt: 0 } as const,
+        };
+      }
       return {
-        totalTransactions: { $gt: 0 },
+        totalTransactions: { $eq: 0 } as const,
       };
     },
-    getSegmentOptions() {
-      // or provide arbitrary values
-      return [{ value: 'With Transactions', count: null }];
-    },
   },
-];
+]);
 
-// Create instance of segment builder
-export const segmentBuilder = new SegmentBuilder(segmentDefinitions);
+type Keys = (typeof growthSegmentDefinitions)[number]['name'];
 
-// Use segment builder to get a segment
-const { name, query } = segmentBuilder.getSegment('originalSource', { value: 'Google' });
+// Get a segment
+const segment = getSegment('originalSource', 'Google', growthSegmentDefinitions);
+console.log('sampleGetSegment', segment);
 
 // Run and get the data
 //db.profiles.findMany(query)
 
+//Provide segment options to frontend
+//Define data shape of response to frontend
+const getOptions: GetOptionsFn<Keys> = () => {
+  //Fetch data and resolve to data shape
+  return {
+    originalSource: [{ value: 'Google', count: 100 }], //found 100 profiles of originalSource = Google
+    customerOrProspect: [
+      { value: 'customer', count: 20 },
+      { value: 'prospect', count: 45 },
+    ],
+  };
+};
+console.log('sampleOptions', getOptions());
+
 //STEP 2: Compose segments in the client.
 
-//Assume the backend returns these data;
-const fetchedTimePeriodsData = ['lastUpdated', 'timestamp'] as const; //declare as const
-
-//or you can declare an arbitrary union
-type PossibleFields = 'originalSource' | 'withTransactions';
+//Declare all possible segment options, time period fields, and time period values
+type AllPossibleSegmentOptions = Keys;
+type TimePeriodFields = 'lastUpdated' | 'timestamp';
+type TimePeriodValues = '30daysfuture' | '7dayspast' | '7daysfuture' | '7days' | 'now';
 
 //Create a composer with all the possible segment names and time period fields.
-const segmentComposer = createComposer<PossibleFields, typeof fetchedTimePeriodsData>();
+const segmentComposer = createComposer<AllPossibleSegmentOptions, TimePeriodFields, TimePeriodValues>();
 
+const yesterday = new Date();
+yesterday.setDate(yesterday.getDate() - 1);
+
+//How you resolve this in the backend is up to you
 const composedSegment = segmentComposer('AND', [
   { type: 'default', name: 'originalSource', value: 'Google' },
-  { type: 'default', name: 'withTransactions', value: null },
+  { type: 'timerange', field: 'lastUpdated', start: 'now', end: '7daysfuture' }, //get all from now to 7 days in the future
+  { type: 'timeperiod', field: 'timestamp', value: '7days', operator: 'GT' }, //get all from now to 7 days in the future
   {
     type: 'composed',
-    operator: 'AND',
+    operator: 'OR',
     segments: [
       { type: 'default', name: 'originalSource', value: 'Google' },
-      { type: 'default', name: 'withTransactions', value: null },
+      { type: 'default', name: 'customerOrProspect', value: 'customer' },
+      { type: 'timeperiod', field: 'lastUpdated', value: '7days', operator: 'LTE' }, //get all from past 7 days including today
     ],
   },
 ]);
 
 const timeFilteredSegment = segmentComposer('AND', [
   composedSegment,
-  { type: 'timeperiod', field: 'lastUpdated', value: new Date(), operator: 'LT' },
+  { type: 'timerange', field: 'lastUpdated', start: 'now', end: '30daysfuture' }, //getall 30 days from now
 ]);
 
 //STEP 3: Parse composed and segments and build composed queries in the backend.
 
-const myComposer = new QueryComposer<MongoDBQuery>({
+const myComposer = new QueryComposer<MongoDBQuery, TimePeriodFields, TimePeriodValues>({
   combineQueries: (queries) => queries.reduce((prevVal, currVal) => ({ ...prevVal, ...currVal }), {}),
-  negateQuery: (field: string, value: any) => ({ [field]: { $ne: value } }),
+  negateQuery: (field, value) => ({ [field]: { $ne: value } }),
   composeOrQuery: (queries) => ({ $or: queries }),
   composeAndQuery: (queries) => ({ $and: queries }),
   composeNotQuery: (queries) => ({ $not: queries }),
-  composeTimePeriodQuery: (field: string, value: Date, operator: TimePeriodOperator) => {
+  composeTimePeriodQuery: (field, value, operator) => {
     let op = '';
     switch (operator) {
       case 'GT':
@@ -117,6 +115,17 @@ const myComposer = new QueryComposer<MongoDBQuery>({
     }
     return { [field]: { [op]: value } };
   },
+  composeTimeRangeQuery: (field, start, end) => {
+    //up to you how to resolve fields
+    return { [field]: { $gte: start, $lte: end } };
+  },
 });
 
-console.dir(parse(timeFilteredSegment, myComposer, segmentBuilder), { depth: null });
+console.dir(
+  parse<MongoDBQuery, AllPossibleSegmentOptions, TimePeriodFields, TimePeriodValues>(
+    timeFilteredSegment,
+    myComposer,
+    growthSegmentDefinitions,
+  ),
+  { depth: null },
+);

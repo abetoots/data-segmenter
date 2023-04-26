@@ -1,71 +1,48 @@
 //Represents all possible values of the segment
-type SegmentOption = {
-  value: unknown;
+export type SegmentOptionValue = {
+  value: string | number;
   count: number | null;
 };
 
-export type SegmentDefinition<QueryType, SegmentData> = {
-  name: string;
+type BuildQuery<TBuildQueryReturn> = (value: SegmentOptionValue['value']) => Readonly<TBuildQueryReturn>;
+
+export type SegmentDefinition<TName extends string, TBuildQueryReturn> = {
+  name: TName;
   description?: string;
   /**
    * Return a query that represents this segment.
    */
-  buildQuery: (params: SegmentOption['value']) => QueryType; // replace `any` with your specific query builder type
-  /**
-   * Get all possible values of the segment. Client consumers
-   * would need this when trying to build out a UI
-   * for composing segments.
-   */
-  getSegmentOptions: () => SegmentOption[] | Promise<SegmentOption[]>;
-  /**
-   * Get the segmented data when the query is run against the data source.
-   */
-  getSegmentData?: (query: QueryType) => SegmentData | Promise<SegmentData>;
+  buildQuery: BuildQuery<TBuildQueryReturn>; // replace `any` with your specific query builder type
 };
 
-export class SegmentBuilder<TQueryType, TSegmentData> {
-  private segmentDefinitions: SegmentDefinition<TQueryType, TSegmentData>[] = [];
-  private segments: { [name: string]: SegmentDefinition<TQueryType, TSegmentData> } = {};
+export type SegmentDefinitions = ReturnType<typeof createSegmentDefinitions>;
+export type SegmentQuery<TBuildQueryReturn> = ReturnType<BuildQuery<TBuildQueryReturn>>;
 
-  constructor(segmentDefinitions: SegmentDefinition<TQueryType, TSegmentData>[]) {
-    this.segmentDefinitions = segmentDefinitions;
-
-    for (const def of segmentDefinitions) {
-      this.segments[def['name']] = def;
-    }
-  }
-
-  addSegment(segmentDefinition: SegmentDefinition<TQueryType, TSegmentData>) {
-    this.segmentDefinitions.push(segmentDefinition);
-    this.segments[segmentDefinition['name']] = segmentDefinition;
-  }
-
-  getSegmentDefinitions() {
-    return this.segmentDefinitions;
-  }
-
-  getSegments() {
-    return this.segments;
-  }
-
-  getSegmentQuery(name: string, params: SegmentOption['value']) {
-    const segmentDefinition = this.segments[name];
-
-    if (!segmentDefinition) {
-      throw new Error(`Segment definition not found for segment: ${name}`);
-    }
-
-    return segmentDefinition.buildQuery(params);
-  }
-
-  getSegment(name: string, params: SegmentOption['value']) {
-    const segmentDefinition = this.segmentDefinitions.find((def) => def.name === name);
-    if (!segmentDefinition) {
-      throw new Error(`Segment definition not found for segment: ${name}`);
-    }
-    const query = segmentDefinition.buildQuery(params);
-    return { name: segmentDefinition.name, query };
-  }
+export function createSegmentDefinitions<T extends readonly SegmentDefinition<V, K>[], V extends string, K>(args: T) {
+  return args;
 }
 
-export default SegmentBuilder;
+export const getSegment = <TDefinitions extends SegmentDefinitions, TName extends TDefinitions[number]['name']>(
+  name: TName,
+  value: SegmentOptionValue['value'],
+  definitions: TDefinitions,
+) => {
+  const segmentDefinition = definitions.find((def) => def.name === name);
+  if (!segmentDefinition) {
+    throw new Error(`Segment definition not found for segment: ${name}`);
+  }
+
+  type Definition = TDefinitions[number];
+  type QueryOfThisName = ReturnType<Extract<Definition, { name: TName }>['buildQuery']>;
+  const query = segmentDefinition.buildQuery(value) as QueryOfThisName;
+  const segmentName = segmentDefinition.name as TName;
+  return { name: segmentName, query };
+};
+
+export type SegmentOptions<TKeys extends string> = {
+  [key in TKeys]: SegmentOptionValue[];
+};
+
+export type GetOptionsFn<TDefinitionKeys extends string> = (
+  ...params: any[]
+) => { [key in TDefinitionKeys]: SegmentOptionValue[] } | Promise<{ [key in TDefinitionKeys]: SegmentOptionValue[] }>;
