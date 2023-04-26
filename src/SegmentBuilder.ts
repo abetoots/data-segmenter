@@ -1,5 +1,6 @@
 //Represents all possible values of the segment
 export type SegmentOptionValue = {
+  label?: string;
   value: string | number;
   count: number | null;
 };
