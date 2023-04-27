@@ -2,6 +2,8 @@
 
 `data-segmenter` is a tool that allows package consumers to define segments from their data regardless of data source like MongoDB or SQL in the backend and provide those segments to a client consumer or user in the frontend.
 
+[Demo](https://data-segmenter-demo-6ql3nxgpb-abetoots.vercel.app/)
+
 This package has 3 main APIs:
 
 ## 1. Segment Builder API
