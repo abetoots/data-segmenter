@@ -2,7 +2,7 @@
 export type SegmentOptionValue = {
   label?: string | null;
   value: string | number;
-  count?: number | null;
+  count: number | null;
 };
 
 type BuildQuery<TBuildQueryReturn> = (value: SegmentOptionValue['value']) => Readonly<TBuildQueryReturn>;
