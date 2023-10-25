@@ -1,6 +1,6 @@
 {
   "name": "@satoshibits/data-segmenter",
-  "version": "2.0.6",
+  "version": "2.1.0",
   "description": "`data-segmenter` is a tool that allows package consumers to define segments from their data regardless of data source like MongoDB or SQL in the backend and provide those segments to a client consumer or user in the frontend.",
   "main": "./dist/esm/index.mjs",
   "types": "./dist/esm/types/index.d.ts",
@@ -54,13 +54,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/abetoots/data-segmenter.git"
+    "url": "https://github.com/abetoots/data-segmenter.git"
   },
   "bugs": {
     "url": "https://github.com/abetoots/data-segmenter/issues"
   },
   "homepage": "https://github.com/abetoots/data-segmenter#readme",
-  "dependencies": {
+  "peerDependencies": {
     "zod": "^3.21.4"
   }
 }

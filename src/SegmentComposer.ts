@@ -33,6 +33,7 @@ export type TimePeriodComposableSegment<TTimePeriodFields, TTimePeriodValues> = 
     : string;
   value: TTimePeriodValues;
   operator: TimePeriodOperator;
+  negate?: boolean;
 };
 
 /**

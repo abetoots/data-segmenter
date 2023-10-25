@@ -13,6 +13,7 @@ type QueryComposerOptions<QueryType, TimePeriodFields extends string, TimePeriod
     field: TimePeriodFields,
     value: TimePeriodValues,
     operator: TimePeriodOperator,
+    negate?: boolean,
   ) => SegmentQuery<QueryType>;
   /**
    * Construct a time period query
