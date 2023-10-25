@@ -108,6 +108,7 @@ export const timePeriodComposableSegmentSchema = z.object({
   field: z.string(),
   value: z.string(),
   operator: timePeriodOperatorSchema,
+  negate: z.boolean().optional(),
 });
 
 export const defaultComposableSegmentSchema = z.object({

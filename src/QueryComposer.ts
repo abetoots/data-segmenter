@@ -5,20 +5,20 @@ type QueryComposerOptions<QueryType, TimePeriodFields extends string, TimePeriod
   /**
    * Negate the given query.
    */
-  negateQuery: (field: string, value: SegmentOptionValue['value']) => SegmentQuery<QueryType>;
+  negateQuery: (args: { field: string; value: SegmentOptionValue['value'] }) => SegmentQuery<QueryType>;
   /**
    * Construct a time period query
    */
-  composeTimePeriodQuery: (
-    field: TimePeriodFields,
-    value: TimePeriodValues,
-    operator: TimePeriodOperator,
-    negate?: boolean,
-  ) => SegmentQuery<QueryType>;
+  composeTimePeriodQuery: (args: {
+    field: TimePeriodFields;
+    value: TimePeriodValues;
+    operator: TimePeriodOperator;
+    negate?: boolean;
+  }) => SegmentQuery<QueryType>;
   /**
    * Construct a time period query
    */
-  composeTimeRangeQuery: (field: TimePeriodFields, start: TimePeriodValues, end: string) => QueryType;
+  composeTimeRangeQuery: (args: { field: TimePeriodFields; start: TimePeriodValues; end: string }) => QueryType;
   /**
    * Merge the two queries. This is different from composing AND queries.
    */
@@ -92,7 +92,7 @@ export const parse = <
     if (segment.type === 'default') {
       let { query } = getSegment(segment.name, segment.value, definitions);
       if (segment.negate) {
-        query = composer.negateQuery(segment.name, segment.value) as typeof query;
+        query = composer.negateQuery({ field: segment.name, value: segment.value }) as typeof query;
       }
 
       queries.push(query as TQueryType);
@@ -100,7 +100,12 @@ export const parse = <
 
     if (segment.type === 'timeperiod') {
       queries.push(
-        composer.composeTimePeriodQuery(segment.field as TTimePeriodFields, segment.value, segment.operator),
+        composer.composeTimePeriodQuery({
+          field: segment.field as TTimePeriodFields,
+          operator: segment.operator,
+          value: segment.value,
+          negate: segment.negate,
+        }),
       );
     }
   }
