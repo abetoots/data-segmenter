@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BaseSegment, ComposedSegment } from '../segment-types';
-import { createSegmentDefinitions } from './builder';
+import { BaseSegment, ComposedSegment } from '../segment-types.mjs';
+import { createSegmentDefinitions } from './builder.mjs';
 
 /**
  * A parser for a composed segment.

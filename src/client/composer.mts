@@ -1,4 +1,4 @@
-import { BaseSegment, ComposedSegment } from '../segment-types';
+import { BaseSegment, ComposedSegment } from '../segment-types.mjs';
 
 /**
  * Creates a function that can be used to create a "composed" segment.

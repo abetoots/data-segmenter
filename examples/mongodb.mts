@@ -1,8 +1,8 @@
-import { createSegmentDefinitions } from '../src/consumer/builder';
-import { createClientComposer } from '../src/client/composer';
+import { createSegmentDefinitions } from '../src/consumer/builder.mjs';
+import { createClientComposer } from '../src/client/composer.mjs';
 
-import type { DefaultSegment, FixedTimePeriodSegment, TimeRangeSegment } from '../src/segment-types';
-import { parse } from '../src/consumer/parser';
+import type { DefaultSegment, FixedTimePeriodSegment, TimeRangeSegment } from '../src/segment-types.mjs';
+import { parse } from '../src/consumer/parser.mjs';
 
 type MongoDBQuery = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

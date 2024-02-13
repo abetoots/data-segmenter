@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { UnionOfArrayElements } from './utils';
+import { UnionOfArrayElements } from './utils.mjs';
 
 export interface BaseSegment {
   type: string;
