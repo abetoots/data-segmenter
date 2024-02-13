@@ -1,3 +1,4 @@
-export * from './SegmentBuilder.js';
-export * from './QueryComposer.js';
-export * from './SegmentComposer.js';
+export * from './client/composer.js';
+export * from './consumer/builder.js';
+export * from './consumer/parser.js';
+export * from './segment-types.js';

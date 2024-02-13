@@ -1,10 +1,14 @@
-import { parse, QueryComposer } from '../src/QueryComposer.js';
-import { createComposer } from '../src/SegmentComposer.js';
-import { createSegmentDefinitions, GetOptionsFn, getSegment } from '../src/SegmentBuilder.js';
+import { createSegmentDefinitions } from '../src/consumer/builder';
+import { createClientComposer } from '../src/client/composer';
+
+import type { DefaultSegment, FixedTimePeriodSegment, TimeRangeSegment } from '../src/segment-types';
+import { parse } from '../src/consumer/parser';
 
 type MongoDBQuery = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 };
+
 //STEP 1: Define your segments.
 export const growthSegmentDefinitions = createSegmentDefinitions([
   {
@@ -30,102 +34,99 @@ export const growthSegmentDefinitions = createSegmentDefinitions([
   },
 ]);
 
-type Keys = (typeof growthSegmentDefinitions)[number]['name'];
-
-// Get a segment
-const segment = getSegment('originalSource', 'Google', growthSegmentDefinitions);
-console.log('sampleGetSegment', segment);
-
-// Run and get the data
-//db.profiles.findMany(query)
-
-//Provide segment options to frontend
-//Define data shape of response to frontend
-const getOptions: GetOptionsFn<Keys> = () => {
-  //Fetch data and resolve to data shape
-  return {
-    originalSource: [{ value: 'Google', count: 100 }], //found 100 profiles of originalSource = Google
-    customerOrProspect: [
-      { value: 'customer', count: 20 },
-      { value: 'prospect', count: 45 },
-    ],
-  };
-};
-console.log('sampleOptions', getOptions());
+type SegmentsWeHandle = DefaultSegment | FixedTimePeriodSegment | TimeRangeSegment;
 
 //STEP 2: Compose segments in the client.
-
-//Declare all possible segment options, time period fields, and time period values
-type AllPossibleSegmentOptions = Keys;
-type TimePeriodFields = 'lastUpdated' | 'timestamp';
-type TimePeriodValues = '30daysfuture' | '7dayspast' | '7daysfuture' | '7days' | 'now';
-
 //Create a composer with all the possible segment names and time period fields.
-const segmentComposer = createComposer<AllPossibleSegmentOptions, TimePeriodFields, TimePeriodValues>();
+const segmentComposer = createClientComposer<SegmentsWeHandle>();
 
 const yesterday = new Date();
 yesterday.setDate(yesterday.getDate() - 1);
 
 //How you resolve this in the backend is up to you
 const composedSegment = segmentComposer('AND', [
-  { type: 'default', name: 'originalSource', value: 'Google' },
-  { type: 'timerange', field: 'lastUpdated', start: 'now', end: '7daysfuture' }, //get all from now to 7 days in the future
-  { type: 'timeperiod', field: 'timestamp', value: '7days', operator: 'GT' }, //get all from now to 7 days in the future
+  { type: 'default', definitionKey: 'originalSource', value: 'Google' },
+  //get all with field "lastUpdated" from now to 7 days in the future
+  {
+    type: 'time_range',
+    referenceDate: 'now',
+    options: {
+      field: 'lastUpdated',
+      start: { value: 0 },
+      end: { value: 7, unit: 'day', operatorRelativeToReference: 'after' },
+    },
+  },
+  //get all with field "event_date" anywhere from 7 days before to 4 days after the specified date/value
+  {
+    type: 'time_range',
+    referenceDate: '2021-01-01T00:00:00Z',
+    options: {
+      field: 'event_date',
+      start: {
+        value: 7,
+        unit: 'day',
+        operatorRelativeToReference: 'before',
+      },
+      end: {
+        value: 4,
+        unit: 'day',
+        operatorRelativeToReference: 'after',
+      },
+    },
+  },
+  //get all with field "timestamp" 7 days before the specified date/value
+  {
+    type: 'fixed_timeperiod',
+    referenceDate: '2021-01-01T00:00:00Z',
+    options: { field: 'timestamp', operator: 'less than', value: 7, unit: 'day' },
+  },
+  //a composed segment treated as a single segment
+  //get all profiles that are customers AND have originalSource as Google AND were updated in the last 7 days
   {
     type: 'composed',
-    operator: 'OR',
-    segments: [
-      { type: 'default', name: 'originalSource', value: 'Google' },
-      { type: 'default', name: 'customerOrProspect', value: 'customer' },
-      { type: 'timeperiod', field: 'lastUpdated', value: '7days', operator: 'LTE' }, //get all from past 7 days including today
-    ],
+    options: {
+      operator: 'AND',
+      segments: [
+        { type: 'default', definitionKey: 'originalSource', value: 'Google' },
+        { type: 'default', definitionKey: 'customerOrProspect', value: 'customer' },
+        {
+          type: 'time_range',
+          referenceDate: 'now',
+          options: {
+            field: 'lastUpdated',
+            start: { value: 7, unit: 'day', operatorRelativeToReference: 'after' },
+            end: { value: 0 },
+          },
+        },
+      ],
+    },
   },
-]);
-
-const timeFilteredSegment = segmentComposer('AND', [
-  composedSegment,
-  { type: 'timerange', field: 'lastUpdated', start: 'now', end: '30daysfuture' }, //getall 30 days from now
 ]);
 
 //STEP 3: Parse composed and segments and build composed queries in the backend.
 
-const myComposer = new QueryComposer<MongoDBQuery, TimePeriodFields, TimePeriodValues>({
-  combineQueries: (queries) => queries.reduce((prevVal, currVal) => ({ ...prevVal, ...currVal }), {}),
-  negateQuery: (field, value) => ({ [field]: { $ne: value } }),
-  composeOrQuery: (queries) => ({ $or: queries }),
-  composeAndQuery: (queries) => ({ $and: queries }),
-  composeNotQuery: (queries) => ({ $not: queries }),
-  composeTimePeriodQuery: (field, value, operator) => {
-    let op = '';
-    switch (operator) {
-      case 'GT':
-        op = '$gt';
-        break;
-      case 'GTE':
-        op = '$gte';
-        break;
-      case 'LT':
-        op = '$lt';
-        break;
-      case 'LTE':
-        op = '$lte';
-        break;
-      default:
-        break;
-    }
-    return { [field]: { [op]: value } };
-  },
-  composeTimeRangeQuery: (field, start, end) => {
-    //up to you how to resolve fields
-    return { [field]: { $gte: start, $lte: end } };
-  },
-});
-
 console.dir(
-  parse<MongoDBQuery, AllPossibleSegmentOptions, TimePeriodFields, TimePeriodValues>(
-    timeFilteredSegment,
-    myComposer,
-    growthSegmentDefinitions,
-  ),
+  parse<MongoDBQuery, SegmentsWeHandle>({
+    composedSegment,
+    definitions: growthSegmentDefinitions,
+    onHandleNegate: (segment, query) => {
+      if (segment.type === 'default' && segment.definitionKey) {
+        return { [segment.definitionKey]: { $ne: segment.value } };
+      }
+      return query;
+    },
+    onHandleComposedSegmentOperator: (queries, operator) => {
+      if (operator === 'OR') {
+        return { $or: queries };
+      }
+
+      if (operator === 'NOT') {
+        return { $not: queries };
+      }
+
+      //By default, we combine all queries with AND
+      return { $and: queries };
+    },
+  }),
   { depth: null },
 );
