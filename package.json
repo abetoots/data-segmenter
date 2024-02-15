@@ -1,6 +1,6 @@
 {
   "name": "@satoshibits/data-segmenter",
-  "version": "3.0.6",
+  "version": "3.0.7",
   "description": "`data-segmenter` is a tool that allows package consumers to define segments from their data regardless of data source like MongoDB or SQL in the backend and provide those segments to a client consumer or user in the frontend.",
   "main": "./dist/esm/index.mjs",
   "types": "./dist/esm/types/index.d.mts",
@@ -36,8 +36,8 @@
   "author": "Abe Caymo (https://abecaymo.netlify.app/)",
   "license": "MIT",
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.40.0",
-    "@typescript-eslint/parser": "^5.40.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.1",
+    "@typescript-eslint/parser": "^7.0.1",
     "eslint": "^8.28.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-import-resolver-typescript": "^3.5.2",

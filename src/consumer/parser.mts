@@ -13,7 +13,7 @@ export const parse = <TQueryType, TSegmentTypes extends BaseSegment = BaseSegmen
   composedSegment: ComposedSegment<TSegmentTypes>;
   definitions: ReturnType<typeof createSegmentDefinitions>;
   onHandleNegate?: (segment: TSegmentTypes, query: TQueryType) => TQueryType;
-  onHandleSegmentWithoutDefinition?: (segment: TSegmentTypes) => TQueryType;
+  onHandleSegmentWithoutDefinition?: (segment: TSegmentTypes) => TQueryType | undefined;
   onHandleComposedSegmentOperator?: (queries: TQueryType[], operator: string) => TQueryType;
 }) => {
   //get the built queries of the default segments at this level
@@ -43,7 +43,10 @@ export const parse = <TQueryType, TSegmentTypes extends BaseSegment = BaseSegmen
       } else {
         if (options.onHandleSegmentWithoutDefinition) {
           //if the segment has no definition key, use the onHandleSegmentWithoutDefinition
-          queries.push(options.onHandleSegmentWithoutDefinition(s));
+          const res = options.onHandleSegmentWithoutDefinition(s);
+          if (res) {
+            queries.push(res);
+          }
         }
       }
     }
