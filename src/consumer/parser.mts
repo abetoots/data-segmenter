@@ -23,7 +23,12 @@ export const parse = <TQueryType, TSegmentTypes extends BaseSegment = BaseSegmen
   for (const segment of options.composedSegment.options.segments) {
     if (segment.type === 'composed') {
       //recurse
-      queries.push(parse(options));
+      queries.push(
+        parse({
+          ...options,
+          composedSegment: segment as ComposedSegment<TSegmentTypes>,
+        }),
+      );
     } else {
       const s = segment as TSegmentTypes;
 
