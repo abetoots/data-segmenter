@@ -3,6 +3,8 @@
 import { BaseSegment, ComposedSegment } from '../segment-types.mjs';
 import { createSegmentDefinitions } from './builder.mjs';
 
+import type { SegmentsGroupOptions } from '../client/composer.mjs';
+
 /**
  * A parser for a composed segment.
  *
@@ -69,3 +71,17 @@ export const parse = <TQueryType, TSegmentTypes extends BaseSegment = BaseSegmen
 
   return parsed;
 };
+
+type ParseSegmentGroupFn<TSegmentGroup, TReturnType = unknown> = (
+  groupName: string,
+  groupOptions: TSegmentGroup,
+) => TReturnType;
+
+export class Parser<TSegment extends BaseSegment, TFilter, TReturnType> {
+  parseSegmentGroup: ParseSegmentGroupFn<SegmentsGroupOptions<TSegment, TFilter>, TReturnType>;
+  constructor(options: {
+    parseSegmentGroup: ParseSegmentGroupFn<SegmentsGroupOptions<TSegment, TFilter>, TReturnType>;
+  }) {
+    this.parseSegmentGroup = options.parseSegmentGroup;
+  }
+}
