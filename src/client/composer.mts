@@ -7,6 +7,7 @@ export type SegmentsGroupOptions<TSegment extends BaseSegment, TFilter, TRelatio
     segment: TSegment;
   };
   extraSegments: TSegment[];
+  id: string;
 };
 
 export type CombinedSegmentsGroupOptions = {
@@ -72,6 +73,7 @@ export class ClientComposer<TSegment extends BaseSegment, TFilter> {
       return;
     }
     this.segmentGroupsMap.set(groupName, {
+      id: groupName,
       filters: filters ?? [],
       main,
       extraSegments: [],
