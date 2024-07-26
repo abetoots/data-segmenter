@@ -72,10 +72,7 @@ export const parse = <TQueryType, TSegmentTypes extends BaseSegment = BaseSegmen
   return parsed;
 };
 
-type ParseSegmentGroupFn<TSegmentGroup, TReturnType = unknown> = (
-  groupName: string,
-  groupOptions: TSegmentGroup,
-) => TReturnType;
+type ParseSegmentGroupFn<TSegmentGroup, TReturnType = unknown> = (groupOptions: TSegmentGroup) => TReturnType;
 
 export class Parser<TSegment extends BaseSegment, TFilter, TReturnType> {
   parseSegmentGroup: ParseSegmentGroupFn<SegmentsGroupOptions<TSegment, TFilter>, TReturnType>;
