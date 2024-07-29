@@ -11,8 +11,14 @@ export type SegmentsGroupOptions<TSegment extends BaseSegment, TFilter, TRelatio
 };
 
 export type CombinedSegmentsGroupOptions = {
-  mainGroupId: string;
-  extraGroupIds: string[];
+  main: {
+    id: string;
+    relationToNextGroup: string;
+  };
+  extraGroupIds: {
+    id: string;
+    relationToNextGroup: string;
+  }[];
   intent: string;
   options: Record<string, unknown>;
 };
@@ -26,11 +32,18 @@ export type CombinedSegmentsGroupOptions = {
 export class ClientComposer<TSegment extends BaseSegment, TFilter> {
   segmentGroupsMap: Map<string, SegmentsGroupOptions<TSegment, TFilter>>;
 
-  combinedSegmentGroupsMap: Map<string, CombinedSegmentsGroupOptions>;
+  combinedSegmentOptions: CombinedSegmentsGroupOptions = {
+    main: {
+      id: '',
+      relationToNextGroup: '',
+    },
+    extraGroupIds: [],
+    intent: '',
+    options: {},
+  };
 
   constructor() {
     this.segmentGroupsMap = new Map();
-    this.combinedSegmentGroupsMap = new Map();
   }
 
   /**
@@ -107,23 +120,19 @@ export class ClientComposer<TSegment extends BaseSegment, TFilter> {
   }
 
   /**
-   * Combines the specified segment groups into a new combined group.
-   *
-   * @param mainGroupId - The ID of the main group.
-   * @param extraGroupIds - An array of IDs of the extra groups.
-   * @param intent - The intent of the combined group.
-   * @param options - Additional options for the combined group.
+   * Combines segment groups based on the provided options.
+   * @param options - The options for combining segment groups.
    */
-  combineSegmentGroups(mainGroupId: string, extraGroupIds: string[], intent: string, options: Record<string, unknown>) {
-    this.combinedSegmentGroupsMap.set(mainGroupId, { mainGroupId, extraGroupIds, intent, options });
+  combineSegmentGroups(options: CombinedSegmentsGroupOptions) {
+    this.combinedSegmentOptions = options;
   }
 
   /**
-   * Retrieves the combined groups map.
+   * Retrieves the combined segment options.
    *
-   * @returns The combined groups map.
+   * @returns An array of combined segment options.
    */
   getCombinedGroups() {
-    return this.combinedSegmentGroupsMap;
+    return this.combinedSegmentOptions;
   }
 }
