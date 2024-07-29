@@ -15,7 +15,7 @@ export type CombinedSegmentsGroupOptions = {
     id: string;
     relationToNextGroup: string;
   };
-  extraGroupIds: {
+  extras: {
     id: string;
     relationToNextGroup: string;
   }[];
@@ -37,7 +37,7 @@ export class ClientComposer<TSegment extends BaseSegment, TFilter> {
       id: '',
       relationToNextGroup: '',
     },
-    extraGroupIds: [],
+    extras: [],
     intent: '',
     options: {},
   };
